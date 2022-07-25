@@ -49,7 +49,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private var binding: ActivityPluginBinding? = null
     private lateinit var callbackUtils: CallbackUtils
 
-    private lateinit var localDeviceName: String
+    private lateinit var outletName: String
     private lateinit var strategy: Strategy
     private lateinit var connectionsClient: ConnectionsClient
     private lateinit var serviceBindManager: ServiceBindManager
@@ -79,10 +79,10 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 serviceBindManager = ServiceBindManager(activity, channel, callbackUtils)
                 serviceBindManager.bindService()
 
-                localDeviceName = if (call.argument<String>("deviceName").isNullOrEmpty())
-                    Build.MANUFACTURER + " " + Build.MODEL
+                outletName = if (call.argument<String>("outletName").isNullOrEmpty())
+                    " "
                 else
-                    call.argument<String>("deviceName")!!
+                    call.argument<String>("outletName")!!
 
                 strategy = when (call.argument<Int>("strategy")) {
                     0 -> Strategy.P2P_CLUSTER
@@ -94,7 +94,8 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                serviceBindManager.mService?.startAdvertising(strategy, localDeviceName)
+                Log.d("nearby_connections", "Advertise outlet: $outletName")
+                serviceBindManager.mService?.startAdvertising(strategy, outletName)
             }
             startBrowsingForPeers -> {
                 Log.d("nearby_connections", "startBrowsingForPeers")
@@ -115,12 +116,14 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             invitePeer -> {
                 Log.d("nearby_connections", "invitePeer")
                 val deviceId = call.argument<String>("deviceId")
-                val displayName = call.argument<String>("deviceName")
-                serviceBindManager.mService?.connect(deviceId!!, displayName!!)
+                val outletName = call.argument<String>("outletName")
+                Log.d("nearby_connections", "Request connect to: $outletName ($deviceId)")
+                serviceBindManager.mService?.connect(deviceId!!, outletName!!)
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
                 val deviceId = call.argument<String>("deviceId")
+                Log.d("nearby_connections", "Disconnect from: $deviceId")
                 serviceBindManager.mService?.disconnect(deviceId!!)
                 callbackUtils.updateStatus(deviceId = deviceId!!, state = notConnected)
                 result.success(true)
@@ -129,6 +132,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 Log.d("nearby_connections", "sendMessage")
                 val deviceId = call.argument<String>("deviceId")
                 val message = call.argument<String>("message")
+                Log.d("nearby_connections", "Send payload with: $message to $deviceId")
                 serviceBindManager.mService?.sendStringPayload(deviceId!!, message!!)
             }
         }

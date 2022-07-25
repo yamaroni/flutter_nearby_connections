@@ -50,7 +50,7 @@ class NearbyService {
   Future init(
       {required String serviceType,
       required Strategy strategy,
-      String? deviceName,
+      String? outletName,
       required Function callback}) async {
     assert(serviceType.length <= 15 &&
         //serviceType != null &&
@@ -96,7 +96,7 @@ class NearbyService {
     _channel.invokeMethod(
       _initNearbyService,
       <String, dynamic>{
-        'deviceName': deviceName ?? "",
+        'outletName': outletName ?? "",
         'serviceType': serviceType,
         'strategy': strategyValue,
       },
@@ -137,12 +137,12 @@ class NearbyService {
   /// Invites a discovered peer to join a nearby connections session.
   /// the [deviceID] is current Device
   FutureOr<dynamic> invitePeer(
-      {required String deviceID, @required String? deviceName}) async {
+      {required String deviceID, @required String? outletName}) async {
     await _channel.invokeMethod(
       _invitePeer,
       <String, dynamic>{
         'deviceId': deviceID,
-        'deviceName': deviceName,
+        'outletName': outletName,
       },
     );
   }

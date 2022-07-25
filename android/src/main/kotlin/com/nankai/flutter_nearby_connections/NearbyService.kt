@@ -47,14 +47,14 @@ class NearbyService : Service() {
     }
 
     fun sendStringPayload(endpointId: String, str: String) {
-        Log.d(TAG, "sendStringPayload $endpointId -> $str")
+        Log.d(TAG, "sendPayload()")
         connectionsClient.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
     }
 
-    fun startAdvertising(strategy: Strategy, deviceName: String) {
+    fun startAdvertising(strategy: Strategy, outletName: String) {
         Log.d(TAG, "startAdvertising()")
         connectionsClient.startAdvertising(
-            deviceName, SERVICE_ID, callbackUtils.connectionLifecycleCallback,
+            outletName, SERVICE_ID, callbackUtils.connectionLifecycleCallback,
             AdvertisingOptions.Builder().setStrategy(strategy).build()
         )
     }
@@ -78,14 +78,14 @@ class NearbyService : Service() {
     }
 
     fun disconnect(endpointId: String) {
-        Log.d(TAG, "disconnect $endpointId")
+        Log.d(TAG, "disconnectFromEndpoint()")
         connectionsClient.disconnectFromEndpoint(endpointId)
     }
 
-    fun connect(endpointId: String, displayName: String) {
-        Log.d(TAG, "connect $endpointId | $displayName")
+    fun connect(endpointId: String, outletName: String) {
+        Log.d(TAG, "requestConnection()")
         connectionsClient.requestConnection(
-            displayName,
+            outletName,
             endpointId,
             callbackUtils.connectionLifecycleCallback
         )
