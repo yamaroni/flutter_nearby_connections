@@ -12,4 +12,3 @@ import 'package:flutter/services.dart';
 part 'src/device.dart';
 part 'src/message.dart';
 part 'src/nearby_service.dart';
-part 'src/strategy.dart';

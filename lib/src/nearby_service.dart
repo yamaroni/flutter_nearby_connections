@@ -1,6 +1,5 @@
 part of flutter_nearby_connections;
 
-const _initNearbyService = 'init_nearby_service';
 const _startAdvertisingPeer = 'start_advertising_peer';
 const _stopAdvertisingPeer = 'stop_advertising_peer';
 const _startBrowsingForPeers = 'start_browsing_for_peers';
@@ -8,9 +7,6 @@ const _stopBrowsingForPeers = 'stop_browsing_for_peers';
 const _invitePeer = 'invite_peer';
 const _disconnectPeer = 'disconnect_peer';
 const _sendMessage = 'send_message';
-const _invokeChangeStateMethod = "invoke_change_state_method";
-const _invokeMessageReceiveMethod = "invoke_message_receive_method";
-const _invokeNearbyRunning = "nearby_running";
 
 /// [StateChangedCallback] is used to call back an object under List<Device>.
 /// [StateChangedCallback] will call when you register in [stateChangedSubscription]
@@ -21,17 +17,7 @@ typedef StateChangedCallback = Function(List<Device> arguments);
 typedef DataReceivedCallback = Function(dynamic data);
 
 class NearbyService {
-  static const MethodChannel _channel =
-      const MethodChannel('flutter_nearby_connections');
-
-  final _stateChangedController = StreamController<List<Device>>.broadcast();
-
-  Stream<List<Device>> get _stateChangedStream =>
-      _stateChangedController.stream;
-
-  final _dataReceivedController = StreamController<dynamic>.broadcast();
-
-  Stream<dynamic> get _dataReceivedStream => _dataReceivedController.stream;
+  static const MethodChannel _channel = const MethodChannel('flutter_nearby_connections');
 
   /// The class [NearbyService] supports the discovery of services provided by
   /// nearby devices and supports communicating with those services through
@@ -47,65 +33,6 @@ class NearbyService {
   ///
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
-  Future init(
-      {required String serviceType,
-      required Strategy strategy,
-      String? outletName,
-      required Function callback}) async {
-    assert(serviceType.length <= 15 &&
-        //serviceType != null &&
-        serviceType.isNotEmpty);
-
-    _channel.setMethodCallHandler((handler) async {
-      debugPrint("method: ${handler.method} | arguments: ${handler.arguments}");
-      switch (handler.method) {
-        case _invokeChangeStateMethod:
-          List<Device> devices = jsonDecode(handler.arguments)
-              .map<Device>((dynamic device) => Device.fromJson(device))
-              .toList();
-          _stateChangedController.add(devices);
-          break;
-        case _invokeMessageReceiveMethod:
-          _dataReceivedController.add(handler.arguments);
-          debugPrint(
-              "_invokeMessageReceiveMethod | arguments: ${handler.arguments}");
-          break;
-        case _invokeNearbyRunning:
-          await Future.delayed(Duration(seconds: 1));
-          callback(handler.arguments as bool);
-          break;
-      }
-    });
-
-    int strategyValue = 0;
-    switch (strategy) {
-      case Strategy.P2P_CLUSTER:
-        strategyValue = 0;
-        break;
-      case Strategy.P2P_STAR:
-        strategyValue = 1;
-        break;
-      case Strategy.P2P_POINT_TO_POINT:
-        strategyValue = 2;
-        break;
-      case Strategy.Wi_Fi_P2P:
-        strategyValue = 0;
-        break;
-    }
-
-    _channel.invokeMethod(
-      _initNearbyService,
-      <String, dynamic>{
-        'outletName': outletName ?? "",
-        'serviceType': serviceType,
-        'strategy': strategyValue,
-      },
-    );
-    if (Platform.isIOS) {
-      await Future.delayed(Duration(seconds: 1));
-      callback(true);
-    }
-  }
 
   /// Begins advertising the service provided by a local peer.
   /// The [startAdvertisingPeer] publishes an advertisement for a specific service

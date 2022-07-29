@@ -47,7 +47,6 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
                 val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, notConnected)
                 addDevice(data)
             }
-            channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, "discover $endpointId")
         }
 
         override fun onEndpointLost(endpointId: String) {
