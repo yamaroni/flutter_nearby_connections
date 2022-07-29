@@ -8,14 +8,6 @@ const _invitePeer = 'invite_peer';
 const _disconnectPeer = 'disconnect_peer';
 const _sendMessage = 'send_message';
 
-/// [StateChangedCallback] is used to call back an object under List<Device>.
-/// [StateChangedCallback] will call when you register in [stateChangedSubscription]
-typedef StateChangedCallback = Function(List<Device> arguments);
-
-/// [DataReceivedCallback] is used to call back an object under List<Device>.
-/// [DataReceivedCallback] will call when you register in [dataReceivedSubscription]
-typedef DataReceivedCallback = Function(dynamic data);
-
 class NearbyService {
   static const MethodChannel _channel = const MethodChannel('flutter_nearby_connections');
 
@@ -89,21 +81,4 @@ class NearbyService {
       'message': message,
     });
   }
-
-  /// [stateChangedSubscription] helps you listen to the changes of peers with
-  /// the circumstances: find a new peer, a peer is invited, a peer is disconnected,
-  /// a peer is invited to connect by another peer, or 2 peers are connected.
-  /// [stateChangedSubscription] will return you a list of [Device].
-  /// see [StateChangedCallback]
-  StreamSubscription stateChangedSubscription(
-      {required StateChangedCallback callback}) =>
-      _stateChangedStream.listen(callback);
-
-  /// The [dataReceivedSubscription] helps you listen when a peer sends you
-  /// text messages. and it returns you a object [Data].
-  /// It returns a [StreamSubscription] so you can cancel listening at any time.
-  /// see [DataReceivedCallback]
-  StreamSubscription dataReceivedSubscription(
-      {required DataReceivedCallback callback}) =>
-      _dataReceivedStream.listen(callback);
 }
