@@ -25,7 +25,6 @@ class ServiceBindManager(
 
     private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Log.d(TAG, "onServiceConnected: $context")
             val binder = service as LocalBinder
             mService = binder.service
             isBound.set(true)
@@ -34,19 +33,16 @@ class ServiceBindManager(
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.d(TAG, "onServiceDisconnected: $context")
             isBound.set(false)
             channel.invokeMethod(NEARBY_RUNNING, isBound.get())
         }
 
         override fun onBindingDied(name: ComponentName?) {
-            Log.d(TAG, "onBindingDied: $context")
             isBound.set(false)
             channel.invokeMethod(NEARBY_RUNNING, isBound.get())
         }
 
         override fun onNullBinding(name: ComponentName?) {
-            Log.d(TAG, "onNullBinding: $context")
             isBound.set(false)
             channel.invokeMethod(NEARBY_RUNNING, isBound.get())
         }
@@ -54,13 +50,11 @@ class ServiceBindManager(
 
 
     fun bindService() {
-        Log.e(TAG, "bindService: $context")
         isBound.set(context.bindService(intent, connection, BIND_AUTO_CREATE))
     }
 
     fun unbindService() {
         try {
-            Log.e(TAG, "unbindService: $context")
             if (isBound.get()) {
                 isBound.set(false)
                 context.unbindService(connection)

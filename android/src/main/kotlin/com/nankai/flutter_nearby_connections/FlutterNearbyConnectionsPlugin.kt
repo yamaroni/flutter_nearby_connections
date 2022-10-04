@@ -36,8 +36,12 @@ const val disconnectPeer = "disconnect_peer"
 
 const val sendMessage = "send_message"
 
+const val stopAllConnections = "stop_all_connections"
+
 const val INVOKE_CHANGE_STATE_METHOD = "invoke_change_state_method"
 const val INVOKE_MESSAGE_RECEIVE_METHOD = "invoke_message_receive_method"
+const val INVOKE_PAYLOAD_TRANSFER_UPDATE_METHOD = "invoke_payload_transfer_update_method"
+const val INVOKE_CALLBACK_UTIL_METHOD = "invoke_callback_util_method"
 
 const val NEARBY_RUNNING = "nearby_running"
 
@@ -73,7 +77,6 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             initNearbyService -> {
-                Log.d("nearby_connections", "initNearbyService")
                 callbackUtils = CallbackUtils(channel, activity)
                 connectionsClient = Nearby.getConnectionsClient(activity)
                 serviceBindManager = ServiceBindManager(activity, channel, callbackUtils)
@@ -93,35 +96,27 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 locationHelper?.requestLocationPermission(result)
             }
             startAdvertisingPeer -> {
-                Log.d("nearby_connections", "startAdvertisingPeer")
-                Log.d("nearby_connections", "Advertise outlet: $outletName")
                 serviceBindManager.mService?.startAdvertising(strategy, outletName)
             }
             startBrowsingForPeers -> {
-                Log.d("nearby_connections", "startBrowsingForPeers")
                 serviceBindManager.mService?.startDiscovery(strategy)
             }
             stopAdvertisingPeer -> {
-                Log.d("nearby_connections", "stopAdvertisingPeer")
                 serviceBindManager.mService?.stopAdvertising()
                 serviceBindManager.unbindService()
                 result.success(true)
             }
             stopBrowsingForPeers -> {
-                Log.d("nearby_connections", "stopDiscovery")
                 serviceBindManager.mService?.stopDiscovery()
                 serviceBindManager.unbindService()
                 result.success(true)
             }
             invitePeer -> {
-                Log.d("nearby_connections", "invitePeer")
                 val deviceId = call.argument<String>("deviceId")
                 val outletName = call.argument<String>("outletName")
-                Log.d("nearby_connections", "Request connect to: $outletName ($deviceId)")
                 serviceBindManager.mService?.connect(deviceId!!, outletName!!)
             }
             disconnectPeer -> {
-                Log.d("nearby_connections", "disconnectPeer")
                 val deviceId = call.argument<String>("deviceId")
                 Log.d("nearby_connections", "Disconnect from: $deviceId")
                 serviceBindManager.mService?.disconnect(deviceId!!)
@@ -129,11 +124,12 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 result.success(true)
             }
             sendMessage -> {
-                Log.d("nearby_connections", "sendMessage")
                 val deviceId = call.argument<String>("deviceId")
                 val message = call.argument<String>("message")
-                Log.d("nearby_connections", "Send payload with: $message to $deviceId")
                 serviceBindManager.mService?.sendStringPayload(deviceId!!, message!!)
+            }
+            stopAllConnections -> {
+                serviceBindManager.mService?.stopAllConnection()
             }
         }
     }

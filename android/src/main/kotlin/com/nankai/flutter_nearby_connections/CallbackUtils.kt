@@ -40,9 +40,7 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
     }
 
     val endpointDiscoveryCallback: EndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
-        override fun onEndpointFound(endpointId: String,
-                                     discoveredEndpointInfo: DiscoveredEndpointInfo) {
-            Log.d("nearby_connections", "onEndpointFound -> $discoveredEndpointInfo")
+        override fun onEndpointFound(endpointId: String, discoveredEndpointInfo: DiscoveredEndpointInfo) {
             if(!deviceExists(endpointId)) {
                 val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, notConnected)
                 addDevice(data)
@@ -50,7 +48,6 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
         }
 
         override fun onEndpointLost(endpointId: String) {
-            Log.d("nearby_connections", "onEndpointLost -> $endpointId")
             if (deviceExists(endpointId)) {
                 Nearby.getConnectionsClient(activity).disconnectFromEndpoint(endpointId)
             }
@@ -59,61 +56,85 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
     }
 
     private val payloadCallback: PayloadCallback = object : PayloadCallback() {
+        var tempPayload: String = ""
+        var tempPayloadId: String = ""
+
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
-            Log.d("nearby_connections", "onPayloadReceived -> $endpointId")
-            val args = mutableMapOf("deviceId" to endpointId, "message" to String(payload.asBytes()!!))
+            tempPayload = String(payload.asBytes()!!)
+            val args = mutableMapOf(
+                "deviceId" to endpointId,
+                "message" to String(payload.asBytes()!!),
+                "payloadId" to payload.id
+                    .toString().split("-")[1]
+            )
             channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, args)
         }
 
-        override fun onPayloadTransferUpdate(endpointId: String,
-                                             payloadTransferUpdate: PayloadTransferUpdate) {
+        override fun onPayloadTransferUpdate(endpointId: String, payloadTransferUpdate: PayloadTransferUpdate) {
             // required for files and streams
-            Log.d("nearby_connections", "onPayloadTransferUpdate -> $endpointId")
+            if (payloadTransferUpdate.status == PayloadTransferUpdate.Status.IN_PROGRESS) {
+                if (tempPayload == "") {
+                    tempPayloadId = payloadTransferUpdate.payloadId.toString()
+                    val args = mutableMapOf(
+                        "deviceId" to endpointId,
+                        "status" to payloadTransferUpdate.status,
+                        "payloadId" to payloadTransferUpdate.payloadId
+                            .toString().split("-")[1]
+                    )
+                    channel.invokeMethod(INVOKE_PAYLOAD_TRANSFER_UPDATE_METHOD, args)
+                } else {
+                    tempPayload = ""
+                }
+            }
+
+            if (payloadTransferUpdate.status == PayloadTransferUpdate.Status.SUCCESS) {
+                if (tempPayloadId == payloadTransferUpdate.payloadId.toString()) {
+                    val args = mutableMapOf(
+                        "deviceId" to endpointId,
+                        "status" to payloadTransferUpdate.status,
+                        "payloadId" to payloadTransferUpdate.payloadId
+                            .toString().split("-")[1]
+                    )
+                    channel.invokeMethod(INVOKE_PAYLOAD_TRANSFER_UPDATE_METHOD, args)
+                    tempPayloadId = ""
+                }
+            }
         }
     }
 
     val connectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated -> $connectionInfo")
             val data = DeviceJson(endpointId, connectionInfo.endpointName, connecting)
             addDevice(data)
             Nearby.getConnectionsClient(activity).acceptConnection(endpointId, payloadCallback)
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
-            Log.d("nearby_connections", "onConnectionResult -> $endpointId")
             val data = when (result.status.statusCode) {
                 ConnectionsStatusCodes.STATUS_OK -> {
-                    Log.d("onConnectionResult", "OK -> $endpointId")
                     DeviceJson(endpointId,
-                        if (device(endpointId)?.outletName == null) "Null" else device(endpointId)?.outletName!!, connected)
-                }
-                ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
-                    Log.d("onConnectionResult", "CONNECTION_REJECTED -> $endpointId")
-                    DeviceJson(endpointId,
-                        if (device(endpointId)?.outletName == null) "Null" else device(endpointId)?.outletName!!, notConnected)
-                }
-                ConnectionsStatusCodes.STATUS_ERROR -> {
-                    Log.d("onConnectionResult", "ERROR -> $endpointId")
-                    DeviceJson(endpointId,
-                        if (device(endpointId)?.outletName == null) "Null" else device(endpointId)?.outletName!!, notConnected)
+                        if (device(endpointId)?.outletName == null) "Null"
+                        else device(endpointId)?.outletName!!, connected)
                 }
                 else -> {
-                    Log.d("onConnectionResult", "UNKNOWN -> $endpointId")
                     DeviceJson(endpointId,
-                        if (device(endpointId)?.outletName == null) "Null" else device(endpointId)?.outletName!!, notConnected)
+                        if (device(endpointId)?.outletName == null) "Null"
+                        else device(endpointId)?.outletName!!, notConnected)
                 }
             }
             addDevice(data)
+
+            val args = mutableMapOf("deviceId" to endpointId, "status" to result.status.statusCode)
+            channel.invokeMethod(INVOKE_CALLBACK_UTIL_METHOD, args)
         }
 
         override fun onDisconnected(endpointId: String) {
-            Log.d("nearby_connections", "onDisconnected -> $endpointId")
             if (deviceExists(endpointId)) {
                 updateStatus(endpointId, notConnected)
             } else {
                 val data = DeviceJson(endpointId,
-                        if (device(endpointId)?.outletName == null) "Null" else device(endpointId)?.outletName!!, notConnected)
+                        if (device(endpointId)?.outletName == null) "Null"
+                        else device(endpointId)?.outletName!!, notConnected)
                 addDevice(data)
             }
         }

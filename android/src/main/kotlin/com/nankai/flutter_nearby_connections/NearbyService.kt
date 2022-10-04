@@ -91,6 +91,13 @@ class NearbyService : Service() {
         )
     }
 
+    fun stopAllConnection() {
+        Log.d(TAG, "stopAllConnection()")
+        stopAdvertising()
+        stopDiscovery()
+        connectionsClient.stopAllEndpoints()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopAdvertising()
