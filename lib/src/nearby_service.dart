@@ -58,11 +58,9 @@ class NearbyService {
   /// the [deviceID] is current Device
   FutureOr<dynamic> disconnectPeer({
     required String? deviceID,
-    required String? outletName,
   }) async {
     await _channel.invokeMethod(_disconnectPeer, <String, dynamic>{
       'deviceId': deviceID,
-      'outletName': outletName,
     });
   }
 
